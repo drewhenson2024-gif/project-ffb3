@@ -29,15 +29,22 @@ Fill in your Supabase URL and API keys from the [Supabase dashboard](https://sup
 - `supabase/migrations/002_player_fantasy_schema.sql`
 - `supabase/migrations/003_drop_prototype_teams.sql`
 - `supabase/migrations/004_player_identity_metadata.sql`
+- `supabase/migrations/005_fix_refresh_career_stats.sql`
+- `supabase/migrations/006_expand_draft_history.sql`
 
-4. Import nflverse draft + fantasy data (2000–2025):
+4. Import nflverse draft + fantasy data (drafts 1980+, stats 2000–2025):
 
 ```bash
-npm install
 npm run import:data
 ```
 
-Data source: [nflverse](https://github.com/nflverse/nflverse-data) (Pro Football Reference draft picks + regular-season player stats). Players are matched by `gsis_id`. Undrafted players are verified against the full draft history.
+Then refresh career totals in the SQL Editor:
+
+```sql
+select refresh_player_career_stats();
+```
+
+Data source: [nflverse](https://github.com/nflverse/nflverse-data). Draft picks cover 1980+ so veterans drafted before 2000 link correctly to their 2000+ fantasy stats.
 
 5. Start the dev server:
 

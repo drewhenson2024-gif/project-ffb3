@@ -17,7 +17,7 @@ export type Player = {
   updated_at: string;
 };
 
-/** Raw draft data for a player (2000+) */
+/** Raw draft data for a player (1980+, nflverse coverage) */
 export type DraftPick = {
   id: number;
   player_id: number;

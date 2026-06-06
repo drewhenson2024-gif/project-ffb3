@@ -43,8 +43,8 @@ export default async function PlayersPage({ searchParams }: PlayersPageProps) {
             Player Career Rankings
           </h1>
           <p className="mt-3 max-w-2xl text-zinc-400">
-            Top career fantasy scorers (PPR) since 2000, linked to draft class
-            data.
+            Top career fantasy scorers (PPR) since 2000, linked to draft history
+            back to 1980.
           </p>
         </header>
 

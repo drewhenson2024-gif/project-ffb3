@@ -31,7 +31,7 @@ export default async function Home() {
             Fantasy Football Database
           </h1>
           <p className="mt-3 max-w-2xl text-zinc-400">
-            Normalized player, draft, and career fantasy data from 2000 onward.
+            Fantasy stats from 2000 onward, linked to draft history back to 1980.
           </p>
         </header>
 
@@ -66,7 +66,7 @@ export default async function Home() {
             />
             <DataModelItem
               title="draft_picks"
-              description="Every draft class since 2000 (round, pick, team, college)"
+              description="Draft picks since 1980 for QBs, RBs, WRs, TEs (round, pick, team, college)"
             />
             <DataModelItem
               title="fantasy_season_stats"
