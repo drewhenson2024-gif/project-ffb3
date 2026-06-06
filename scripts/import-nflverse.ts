@@ -328,8 +328,32 @@ async function main() {
     })
     .filter((row): row is NonNullable<typeof row> => row !== null);
 
-  console.log(`Inserting ${draftInsertRows.length} draft picks (${DRAFT_START}+)...`);
-  await batchInsert(supabase, "draft_picks", draftInsertRows);
+  // Rare cases: same player drafted twice (e.g. Bo Jackson 1986 + 1987 supplemental)
+  const draftByPlayerId = new Map<
+    number,
+    (typeof draftInsertRows)[number]
+  >();
+  for (const row of draftInsertRows) {
+    const existing = draftByPlayerId.get(row.player_id);
+    if (
+      !existing ||
+      row.draft_year < existing.draft_year ||
+      (row.draft_year === existing.draft_year &&
+        row.pick_overall < existing.pick_overall)
+    ) {
+      draftByPlayerId.set(row.player_id, row);
+    }
+  }
+  const uniqueDraftRows = [...draftByPlayerId.values()];
+
+  if (uniqueDraftRows.length < draftInsertRows.length) {
+    console.log(
+      `  Deduped ${draftInsertRows.length - uniqueDraftRows.length} duplicate draft entries`,
+    );
+  }
+
+  console.log(`Inserting ${uniqueDraftRows.length} draft picks (${DRAFT_START}+)...`);
+  await batchInsert(supabase, "draft_picks", uniqueDraftRows);
 
   const fantasyInsertRows = seasonStatRows
     .map((row) => {
@@ -360,7 +384,7 @@ async function main() {
 
   console.log("\nImport complete.");
   console.log(`  Players:              ${playerRows.length}`);
-  console.log(`  Draft picks (${DRAFT_START}+): ${draftInsertRows.length}`);
+  console.log(`  Draft picks (${DRAFT_START}+): ${uniqueDraftRows.length}`);
   console.log(`  Season stat rows:     ${fantasyInsertRows.length}`);
   console.log(`  Verified undrafted:   ${undraftedWithStats}`);
   const duplicateGroups = [...duplicateNameKeys.entries()].filter(
