@@ -22,13 +22,21 @@ export function SetupNotice({ message }: SetupNoticeProps) {
           </a>
         </li>
         <li>
-          Run each migration in order:{" "}
+          Run migrations in order:{" "}
           <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-xs">
-            002_player_fantasy_schema.sql
+            002
           </code>
-          , then{" "}
+          ,{" "}
           <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-xs">
-            003_drop_prototype_teams.sql
+            003
+          </code>
+          ,{" "}
+          <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-xs">
+            004
+          </code>
+          , then run{" "}
+          <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-xs">
+            npm run import:data
           </code>
         </li>
         <li>Refresh this page</li>
