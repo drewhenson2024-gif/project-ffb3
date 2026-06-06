@@ -5,6 +5,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { normalizePlayerName } from "../src/lib/normalize-name";
 import {
+  DRAFT_START,
   SEASON_END,
   SEASON_START,
   draftPicksUrl,
@@ -193,10 +194,7 @@ async function main() {
       pfrPlayerId: row.pfr_player_id || null,
       debutSeason: existing?.debutSeason ?? null,
       finalSeason: existing?.finalSeason ?? null,
-      draftYear:
-        draftYear >= SEASON_START
-          ? draftYear
-          : (existing?.draftYear ?? null),
+      draftYear: draftYear >= DRAFT_START ? draftYear : (existing?.draftYear ?? null),
     });
   }
 
@@ -311,7 +309,7 @@ async function main() {
   const draftInsertRows = draftRows
     .filter((row) => {
       const year = num(row.season);
-      return year >= SEASON_START && isSkillPosition(row.position);
+      return year >= DRAFT_START && isSkillPosition(row.position);
     })
     .map((row) => {
       const externalId = resolveExternalId(row.gsis_id, row.pfr_player_id);
@@ -330,7 +328,7 @@ async function main() {
     })
     .filter((row): row is NonNullable<typeof row> => row !== null);
 
-  console.log(`Inserting ${draftInsertRows.length} draft picks (2000+)...`);
+  console.log(`Inserting ${draftInsertRows.length} draft picks (${DRAFT_START}+)...`);
   await batchInsert(supabase, "draft_picks", draftInsertRows);
 
   const fantasyInsertRows = seasonStatRows
@@ -362,7 +360,7 @@ async function main() {
 
   console.log("\nImport complete.");
   console.log(`  Players:              ${playerRows.length}`);
-  console.log(`  Draft picks (2000+):  ${draftInsertRows.length}`);
+  console.log(`  Draft picks (${DRAFT_START}+): ${draftInsertRows.length}`);
   console.log(`  Season stat rows:     ${fantasyInsertRows.length}`);
   console.log(`  Verified undrafted:   ${undraftedWithStats}`);
   const duplicateGroups = [...duplicateNameKeys.entries()].filter(

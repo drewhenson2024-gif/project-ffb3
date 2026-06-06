@@ -1,8 +1,12 @@
 export const POSITIONS = ["QB", "RB", "WR", "TE"] as const;
 export type SkillPosition = (typeof POSITIONS)[number];
 
+/** Fantasy season stats import range */
 export const SEASON_START = 2000;
 export const SEASON_END = 2025;
+
+/** Draft pick history (nflverse coverage begins 1980) */
+export const DRAFT_START = 1980;
 
 export const NFLVERSE_BASE =
   "https://github.com/nflverse/nflverse-data/releases/download";
