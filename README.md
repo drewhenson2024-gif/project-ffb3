@@ -24,12 +24,18 @@ cp .env.example .env.local
 
 Fill in your Supabase URL and API keys from the [Supabase dashboard](https://supabase.com/dashboard).
 
-3. Run the database migration in the Supabase SQL Editor:
+3. Run the database migrations in the Supabase SQL Editor (in order):
 
-- Open `supabase/migrations/001_initial_schema.sql`
-- Paste and run it in your project's SQL Editor
+- `supabase/migrations/002_player_fantasy_schema.sql`
+- `supabase/migrations/003_drop_prototype_teams.sql`
 
-4. Start the dev server:
+4. After importing raw data, rebuild career totals:
+
+```sql
+select refresh_player_career_stats();
+```
+
+5. Start the dev server:
 
 ```bash
 npm run dev
