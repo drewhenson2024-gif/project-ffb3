@@ -15,8 +15,10 @@ export type DynastyRankingFile = {
   players: DynastyRankingEntry[];
 };
 
+import { PROJECTION_CONFIG } from "./projection-config";
+
 /** Blend model remaining PAB toward dynasty-implied peer percentile. */
-export const DYNASTY_CALIBRATION_WEIGHT = 0.35;
+export const DYNASTY_CALIBRATION_WEIGHT = PROJECTION_CONFIG.dynastyCalibrationWeight;
 
 export function dynastyImpliedRemainingPab(
   positionRank: number,

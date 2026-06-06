@@ -3,6 +3,7 @@ import { VALUABLE_TIERS, type ValuableTier } from "./career-pab";
 import type { CareerQuartile } from "./career-stage";
 import { fitOls, predictOls, type OlsModel } from "./regression";
 import type { ProjectionCheckpoint } from "./checkpoints";
+import { PROJECTION_CONFIG } from "./projection-config";
 
 export const PROJECTION_FEATURE_NAMES = [
   "log_draft_pick",
@@ -30,14 +31,19 @@ export type TierTargetModels = Record<ValuableTier, OlsModel | null>;
 export type ProjectionModelBundle = {
   byQuartile: Map<QuartileModelKey, TierTargetModels>;
   byPosition: Map<Position, TierTargetModels>;
+  recentFeatureScale: number;
 };
 
 function modelKey(position: Position, quartile: CareerQuartile): QuartileModelKey {
   return `${position}-Q${quartile}`;
 }
 
-export function checkpointFeatures(checkpoint: ProjectionCheckpoint): number[] {
+export function checkpointFeatures(
+  checkpoint: ProjectionCheckpoint,
+  recentScale = PROJECTION_CONFIG.recentFeatureScale,
+): number[] {
   const draftPick = checkpoint.draftPick ?? 256;
+  const s = recentScale;
   return [
     Math.log(draftPick),
     checkpoint.isUndrafted ? 1 : 0,
@@ -48,22 +54,25 @@ export function checkpointFeatures(checkpoint: ProjectionCheckpoint): number[] {
     checkpoint.peakTier,
     checkpoint.gamesPlayed,
     checkpoint.ageProxy ?? checkpoint.yearsPlayed + 22,
-    checkpoint.recentElite,
-    checkpoint.recentStar,
-    checkpoint.recentStarter,
-    checkpoint.recentValuableSeasons,
-    checkpoint.recentPabRate,
-    checkpoint.lastSeasonTier,
-    checkpoint.momentum,
+    checkpoint.recentElite * s,
+    checkpoint.recentStar * s,
+    checkpoint.recentStarter * s,
+    checkpoint.recentValuableSeasons * s,
+    checkpoint.recentPabRate * s,
+    checkpoint.lastSeasonTier * s,
+    checkpoint.momentum * s,
   ];
 }
 
-function trainTierModels(rows: ProjectionCheckpoint[]): TierTargetModels {
+function trainTierModels(
+  rows: ProjectionCheckpoint[],
+  recentScale: number,
+): TierTargetModels {
   if (rows.length < 20) {
     return { elite: null, star: null, starter: null };
   }
 
-  const X = rows.map((row) => checkpointFeatures(row));
+  const X = rows.map((row) => checkpointFeatures(row, recentScale));
   const models = {} as TierTargetModels;
 
   for (const tier of VALUABLE_TIERS) {
@@ -76,6 +85,7 @@ function trainTierModels(rows: ProjectionCheckpoint[]): TierTargetModels {
 
 export function trainProjectionModels(
   checkpoints: ProjectionCheckpoint[],
+  recentScale = PROJECTION_CONFIG.recentFeatureScale,
 ): ProjectionModelBundle {
   const byQuartile = new Map<QuartileModelKey, TierTargetModels>();
   const byPosition = new Map<Position, TierTargetModels>();
@@ -85,15 +95,18 @@ export function trainProjectionModels(
 
   for (const position of positions) {
     const positionRows = checkpoints.filter((row) => row.position === position);
-    byPosition.set(position, trainTierModels(positionRows));
+    byPosition.set(position, trainTierModels(positionRows, recentScale));
 
     for (const quartile of quartiles) {
       const rows = positionRows.filter((row) => row.careerQuartile === quartile);
-      byQuartile.set(modelKey(position, quartile), trainTierModels(rows));
+      byQuartile.set(
+        modelKey(position, quartile),
+        trainTierModels(rows, recentScale),
+      );
     }
   }
 
-  return { byQuartile, byPosition };
+  return { byQuartile, byPosition, recentFeatureScale: recentScale };
 }
 
 function getModels(
@@ -112,7 +125,7 @@ export function predictRemainingTiers(
   checkpoint: ProjectionCheckpoint,
 ): Record<ValuableTier, number> {
   const models = getModels(bundle, checkpoint.position, checkpoint.careerQuartile);
-  const features = checkpointFeatures(checkpoint);
+  const features = checkpointFeatures(checkpoint, bundle.recentFeatureScale);
   const prediction = { elite: 0, star: 0, starter: 0 };
 
   for (const tier of VALUABLE_TIERS) {

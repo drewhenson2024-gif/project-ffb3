@@ -1,6 +1,7 @@
 import type { Position } from "@/types/database";
 import type { TierSeasonCounts } from "./career-pab";
 import type { RecentPerformance } from "./recent-performance";
+import { PROJECTION_CONFIG } from "./projection-config";
 
 export type CareerQuartile = 1 | 2 | 3 | 4;
 
@@ -70,9 +71,11 @@ export function estimateActiveCareerTotal(
     const eliteBonus =
       context.peakTier >= 4 ? 3 : context.peakTier >= 3 ? 1 : 0;
     const recentBonus =
+      PROJECTION_CONFIG.recentAffectsCareerLength &&
       context.recent.recentValuableSeasons >= 2
         ? 2
-        : context.recent.recentValuableSeasons >= 1
+        : PROJECTION_CONFIG.recentAffectsCareerLength &&
+            context.recent.recentValuableSeasons >= 1
           ? 1
           : 0;
     const retireAge = POSITION_RETIRE_AGE[position] + eliteBonus + recentBonus;
@@ -81,11 +84,14 @@ export function estimateActiveCareerTotal(
   }
 
   const recentElitePath =
-    context.recent.recentElite >= 1 && context.peakTier >= 4
+    PROJECTION_CONFIG.recentAffectsCareerLength &&
+    context.recent.recentElite >= 1 &&
+    context.peakTier >= 4
       ? yearsPlayed + 8
       : 0;
 
   const productivePath =
+    PROJECTION_CONFIG.recentAffectsCareerLength &&
     context.recent.recentValuableSeasons >= 2
       ? yearsPlayed + 5
       : yearsPlayed + 2;

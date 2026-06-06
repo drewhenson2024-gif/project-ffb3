@@ -11,6 +11,7 @@
     "check:data": "tsx scripts/check-data-integrity.ts",
     "analyze:projection": "tsx scripts/analyze-career-projection.ts",
     "backtest:projection": "tsx scripts/backtest-projection.ts",
+    "ablate:recent": "tsx scripts/ablate-recent-weight.ts",
     "sample:projections": "tsx scripts/sample-projections.ts",
     "compare:dynasty": "tsx scripts/compare-dynasty-rankings.ts",
     "import:dynasty": "tsx scripts/import-dynasty-rankings.ts"

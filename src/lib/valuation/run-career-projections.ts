@@ -24,6 +24,7 @@ import {
   normalizePlayerName,
 } from "./dynasty-calibration";
 import { loadDynastyRankings } from "./load-dynasty-rankings";
+import { PROJECTION_CONFIG } from "./projection-config";
 import { estimateActiveCareerTotal } from "./career-stage";
 import { computeRecentPerformance } from "./recent-performance";
 import { checkpointToCompCandidate } from "./projection-predict";
@@ -213,7 +214,8 @@ export async function runCareerProjections(
   const compPool = trainingCheckpoints.map(checkpointToCompCandidate);
   const positionMedians = buildPositionMedianLengths(trainingCareers);
 
-  const dynastyFile = await loadDynastyRankings();
+  const useDynasty = PROJECTION_CONFIG.dynastyCalibrationWeight > 0;
+  const dynastyFile = useDynasty ? await loadDynastyRankings() : null;
   const dynastyByName = dynastyFile ? buildDynastyLookup(dynastyFile) : new Map();
 
   const projections = new Map<number, PlayerProjection>();
@@ -311,11 +313,13 @@ export async function runCareerProjections(
       nameById.get(career.playerId) ?? "",
     );
     const dynastyEntry = dynastyByName.get(playerName);
-    const calibratedRemaining = calibrateRemainingPab(
-      modelRemaining,
-      dynastyEntry?.positionRank ?? null,
-      peerRemaining,
-    );
+    const calibratedRemaining = useDynasty
+      ? calibrateRemainingPab(
+          modelRemaining,
+          dynastyEntry?.positionRank ?? null,
+          peerRemaining,
+        )
+      : modelRemaining;
     const scale =
       modelRemaining > 0 ? calibratedRemaining / modelRemaining : 1;
     const calibratedTiers = {
