@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "import:data": "tsx scripts/import-nflverse.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.107.0",
@@ -15,6 +16,9 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "csv-parse": "^5.6.0",
+    "dotenv": "^16.4.7",
+    "tsx": "^4.19.3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
