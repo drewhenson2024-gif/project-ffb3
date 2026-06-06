@@ -1,12 +1,14 @@
 import { disambiguatedLabel } from "@/lib/normalize-name";
+import type { PlayerProjection } from "@/lib/valuation/run-career-projections";
 import type { PlayerProfile } from "@/types/database";
 import Link from "next/link";
 
 type PlayersTableProps = {
   players: PlayerProfile[];
+  projections?: Record<number, PlayerProjection>;
 };
 
-export function PlayersTable({ players }: PlayersTableProps) {
+export function PlayersTable({ players, projections = {} }: PlayersTableProps) {
   return (
     <div className="w-full overflow-x-auto rounded-2xl border border-emerald-500/20 bg-zinc-900/60 shadow-xl shadow-emerald-950/30">
       <table className="w-full min-w-[720px] text-left text-sm">
@@ -17,6 +19,9 @@ export function PlayersTable({ players }: PlayersTableProps) {
             <th className="px-4 py-3 font-semibold">Draft</th>
             <th className="px-4 py-3 font-semibold">Seasons</th>
             <th className="px-4 py-3 text-right font-semibold">Career PPR</th>
+            <th className="px-4 py-3 text-right font-semibold">Realized PAB</th>
+            <th className="px-4 py-3 text-right font-semibold">Projected PAB</th>
+            <th className="px-4 py-3 text-right font-semibold">Total PAB</th>
           </tr>
         </thead>
         <tbody>
@@ -31,6 +36,7 @@ export function PlayersTable({ players }: PlayersTableProps) {
               : player.draft_year
                 ? `${player.draft_year} · #${player.draft_pick_overall}`
                 : "—";
+            const projection = projections[player.player_id];
 
             return (
               <tr
@@ -54,6 +60,15 @@ export function PlayersTable({ players }: PlayersTableProps) {
                 </td>
                 <td className="px-4 py-3 text-right font-mono text-emerald-300">
                   {Number(player.fantasy_points_ppr ?? 0).toFixed(1)}
+                </td>
+                <td className="px-4 py-3 text-right font-mono text-zinc-300">
+                  {projection ? projection.realizedPab.toFixed(0) : "—"}
+                </td>
+                <td className="px-4 py-3 text-right font-mono text-amber-300">
+                  {projection ? projection.projectedRemainingPab.toFixed(0) : "—"}
+                </td>
+                <td className="px-4 py-3 text-right font-mono text-emerald-200">
+                  {projection ? projection.totalCareerPab.toFixed(0) : "—"}
                 </td>
               </tr>
             );

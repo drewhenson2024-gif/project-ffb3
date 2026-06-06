@@ -1,4 +1,6 @@
 import { PlayersTable } from "@/components/players-table";
+import { runCareerProjections } from "@/lib/valuation/run-career-projections";
+import { DEFAULT_LEAGUE_CONFIG } from "@/lib/valuation/types";
 import { createServerClient } from "@/lib/supabase/server";
 import type { PlayerProfile } from "@/types/database";
 import Link from "next/link";
@@ -32,6 +34,17 @@ export default async function PlayersPage({ searchParams }: PlayersPageProps) {
 
   const { data, error } = await query;
 
+  let projections: Awaited<ReturnType<typeof runCareerProjections>>["projections"] =
+    new Map();
+  try {
+    const result = await runCareerProjections(supabase, DEFAULT_LEAGUE_CONFIG);
+    projections = result.projections;
+  } catch {
+    projections = new Map();
+  }
+
+  const projectionEntries = Object.fromEntries(projections);
+
   return (
     <div className="min-h-full bg-gradient-to-b from-emerald-950 via-zinc-950 to-black text-white">
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-16">
@@ -43,8 +56,8 @@ export default async function PlayersPage({ searchParams }: PlayersPageProps) {
             Player Career Rankings
           </h1>
           <p className="mt-3 max-w-2xl text-zinc-400">
-            Top career fantasy scorers (PPR) since 2000, linked to draft history
-            back to 1980.
+            Top career fantasy scorers (PPR) since 2000. Active players show
+            projected remaining PAB using default 16-team PPR league settings.
           </p>
         </header>
 
@@ -82,7 +95,10 @@ export default async function PlayersPage({ searchParams }: PlayersPageProps) {
             Could not load players: {error.message}
           </p>
         ) : (
-          <PlayersTable players={(data ?? []) as PlayerProfile[]} />
+          <PlayersTable
+            players={(data ?? []) as PlayerProfile[]}
+            projections={projectionEntries}
+          />
         )}
       </main>
     </div>

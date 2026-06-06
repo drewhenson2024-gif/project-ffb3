@@ -2,9 +2,10 @@ import { LeagueConfigForm } from "@/components/league-config-form";
 import { ValuationResults } from "@/components/valuation-results";
 import { computeValuation } from "@/lib/valuation/pab";
 import { parseLeagueConfig } from "@/lib/valuation/parse-config";
+import { runCareerProjections } from "@/lib/valuation/run-career-projections";
+import { loadValuationSeasons } from "@/lib/valuation/season-data";
 import { DEFAULT_LEAGUE_CONFIG } from "@/lib/valuation/types";
 import { createServerClient } from "@/lib/supabase/server";
-import type { FantasySeasonStats } from "@/types/database";
 import Link from "next/link";
 
 type ValuationPageProps = {
@@ -17,15 +18,29 @@ export default async function ValuationPage({ searchParams }: ValuationPageProps
   const config = hasParams ? parseLeagueConfig(params) : DEFAULT_LEAGUE_CONFIG;
 
   const supabase = createServerClient();
-  const { data: seasons, error } = await supabase
-    .from("fantasy_season_stats")
-    .select(
-      "season_year, position, fantasy_points_ppr, fantasy_points_half_ppr, fantasy_points_standard",
-    );
+  let seasons: Awaited<ReturnType<typeof loadValuationSeasons>>["seasons"] = [];
+  let years: number[] = [];
+  let error: Error | null = null;
+  let projectionSummary: Awaited<
+    ReturnType<typeof runCareerProjections>
+  >["summary"] | null = null;
+
+  try {
+    const loaded = await loadValuationSeasons(supabase);
+    seasons = loaded.seasons;
+    years = loaded.years;
+
+    if (seasons.length > 0 && years.length > 0) {
+      const projectionResult = await runCareerProjections(supabase, config);
+      projectionSummary = projectionResult.summary;
+    }
+  } catch (err) {
+    error = err instanceof Error ? err : new Error("Failed to load season data");
+  }
 
   const valuation =
-    seasons && seasons.length > 0
-      ? computeValuation(config, seasons as FantasySeasonStats[])
+    seasons.length > 0 && years.length > 0
+      ? computeValuation(config, seasons, years)
       : null;
 
   return (
@@ -55,6 +70,7 @@ export default async function ValuationPage({ searchParams }: ValuationPageProps
             config={config}
             years={valuation.years}
             positions={valuation.positions}
+            projectionSummary={projectionSummary}
           />
         ) : (
           <p className="text-zinc-400">Import season data to run valuations.</p>

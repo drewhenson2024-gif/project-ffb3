@@ -1,4 +1,10 @@
 import { disambiguatedLabel } from "@/lib/normalize-name";
+import { CAREER_QUARTILE_LABELS } from "@/lib/valuation/career-stage";
+import {
+  getPlayerProjection,
+  runCareerProjections,
+} from "@/lib/valuation/run-career-projections";
+import { DEFAULT_LEAGUE_CONFIG } from "@/lib/valuation/types";
 import { createServerClient } from "@/lib/supabase/server";
 import type { FantasySeasonStats, PlayerProfile } from "@/types/database";
 import Link from "next/link";
@@ -38,6 +44,14 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
     player.debut_season,
   );
 
+  let projection = null;
+  try {
+    const result = await runCareerProjections(supabase, DEFAULT_LEAGUE_CONFIG);
+    projection = getPlayerProjection(result, playerId);
+  } catch {
+    projection = null;
+  }
+
   return (
     <div className="min-h-full bg-gradient-to-b from-emerald-950 via-zinc-950 to-black text-white">
       <main className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-6 py-16">
@@ -66,6 +80,41 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
           <Stat label="Games" value={String(player.games_played ?? 0)} />
           <Stat label="Seasons" value={String(player.seasons_played ?? 0)} />
         </section>
+
+        {projection ? (
+          <section className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-6">
+            <h2 className="text-lg font-semibold text-emerald-100">
+              Career PAB projection
+            </h2>
+            <p className="mt-1 text-sm text-emerald-200/70">
+              Default 16-team PPR league · Q{projection.careerQuartile}{" "}
+              {CAREER_QUARTILE_LABELS[projection.careerQuartile]} career ·{" "}
+              {projection.compMatchType} comps (n={projection.compSampleSize})
+            </p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+              <Stat label="Realized PAB" value={projection.realizedPab.toFixed(0)} />
+              <Stat
+                label="Projected remaining"
+                value={projection.projectedRemainingPab.toFixed(0)}
+              />
+              <Stat label="Total career PAB" value={projection.totalCareerPab.toFixed(0)} />
+            </div>
+            <p className="mt-4 text-sm text-zinc-400">
+              Expected remaining tier seasons:{" "}
+              {projection.projectedRemainingCounts.elite.toFixed(1)} elite,{" "}
+              {projection.projectedRemainingCounts.star.toFixed(1)} star,{" "}
+              {projection.projectedRemainingCounts.starter.toFixed(1)} starter
+            </p>
+          </section>
+        ) : (
+          <section className="rounded-2xl border border-white/10 bg-zinc-900/50 p-6">
+            <h2 className="text-lg font-semibold">Career PAB projection</h2>
+            <p className="mt-2 text-sm text-zinc-400">
+              No active projection — career may be complete, player is a current
+              rookie, or has no classified seasons under default league settings.
+            </p>
+          </section>
+        )}
 
         <section className="rounded-2xl border border-white/10 bg-zinc-900/50 p-6">
           <h2 className="text-lg font-semibold">Season log</h2>
