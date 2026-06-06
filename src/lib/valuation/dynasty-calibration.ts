@@ -3,8 +3,8 @@ import type { Position } from "@/types/database";
 export type DynastyRankingEntry = {
   name: string;
   position: Position;
-  /** Overall dynasty rank (optional). */
-  dynastyRank?: number;
+  /** Overall dynasty rank from FantasyPros ECR. */
+  dynastyRank: number;
   /** Position rank (QB1, RB5, etc.) — primary calibration key. */
   positionRank: number;
 };
@@ -46,6 +46,7 @@ export function normalizePlayerName(name: string): string {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\b(jr|sr|ii|iii|iv|v)\b\.?/g, "")
     .replace(/[^a-z0-9'\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();

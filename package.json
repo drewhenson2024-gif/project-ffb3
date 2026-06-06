@@ -12,7 +12,8 @@
     "analyze:projection": "tsx scripts/analyze-career-projection.ts",
     "backtest:projection": "tsx scripts/backtest-projection.ts",
     "sample:projections": "tsx scripts/sample-projections.ts",
-    "compare:dynasty": "tsx scripts/compare-dynasty-rankings.ts"
+    "compare:dynasty": "tsx scripts/compare-dynasty-rankings.ts",
+    "import:dynasty": "tsx scripts/import-dynasty-rankings.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.107.0",
