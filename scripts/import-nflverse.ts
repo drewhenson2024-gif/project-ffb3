@@ -76,6 +76,37 @@ function num(value: string | undefined): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function statInt(value: string | undefined): number {
+  return Math.max(0, Math.round(num(value)));
+}
+
+async function loadPlayerIdMap(
+  supabase: ReturnType<typeof createClient>,
+): Promise<Map<string, number>> {
+  const idByExternal = new Map<string, number>();
+  const pageSize = 1000;
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("players")
+      .select("id, external_id")
+      .range(from, from + pageSize - 1);
+
+    if (error) throw error;
+    if (!data?.length) break;
+
+    for (const row of data as Array<{ id: number; external_id: string }>) {
+      idByExternal.set(row.external_id, row.id);
+    }
+
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+
+  return idByExternal;
+}
+
 async function downloadCsv(url: string, filename: string): Promise<string> {
   const filePath = path.join(CACHE_DIR, filename);
   try {
@@ -210,7 +241,6 @@ async function main() {
         draftYear: existing?.draftYear ?? null,
       });
 
-      const receptions = num(row.receptions);
       const fantasyStandard = num(row.fantasy_points);
       const fantasyPpr = num(row.fantasy_points_ppr);
 
@@ -219,25 +249,28 @@ async function main() {
         season_year: season,
         position: row.position,
         team: row.recent_team || null,
-        games_played: num(row.games),
+        games_played: statInt(row.games),
         games_started: 0,
-        pass_attempts: num(row.attempts),
-        pass_completions: num(row.completions),
-        pass_yards: num(row.passing_yards),
-        pass_touchdowns: num(row.passing_tds),
-        interceptions: num(row.passing_interceptions),
-        rush_attempts: num(row.carries),
-        rush_yards: num(row.rushing_yards),
-        rush_touchdowns: num(row.rushing_tds),
-        targets: num(row.targets),
-        receptions,
-        receiving_yards: num(row.receiving_yards),
-        receiving_touchdowns: num(row.receiving_tds),
+        pass_attempts: statInt(row.attempts),
+        pass_completions: statInt(row.completions),
+        pass_yards: statInt(row.passing_yards),
+        pass_touchdowns: statInt(row.passing_tds),
+        interceptions: statInt(row.passing_interceptions),
+        rush_attempts: statInt(row.carries),
+        rush_yards: statInt(row.rushing_yards),
+        rush_touchdowns: statInt(row.rushing_tds),
+        targets: statInt(row.targets),
+        receptions: statInt(row.receptions),
+        receiving_yards: statInt(row.receiving_yards),
+        receiving_touchdowns: statInt(row.receiving_tds),
         fumbles_lost:
-          num(row.rushing_fumbles_lost) + num(row.receiving_fumbles_lost),
+          statInt(row.rushing_fumbles_lost) + statInt(row.receiving_fumbles_lost),
         fantasy_points_standard: fantasyStandard,
         fantasy_points_ppr: fantasyPpr,
-        fantasy_points_half_ppr: halfPprPoints(fantasyStandard, receptions),
+        fantasy_points_half_ppr: halfPprPoints(
+          fantasyStandard,
+          statInt(row.receptions),
+        ),
       });
     }
   }
@@ -272,15 +305,8 @@ async function main() {
   console.log(`Inserting ${playerRows.length} players...`);
   await batchInsert(supabase, "players", playerRows);
 
-  const { data: insertedPlayers, error: playerLookupError } = await supabase
-    .from("players")
-    .select("id, external_id");
-
-  if (playerLookupError) throw playerLookupError;
-
-  const idByExternal = new Map(
-    insertedPlayers!.map((row) => [row.external_id as string, row.id as number]),
-  );
+  const idByExternal = await loadPlayerIdMap(supabase);
+  console.log(`  Resolved ${idByExternal.size} player IDs for linking`);
 
   const draftInsertRows = draftRows
     .filter((row) => {
@@ -324,7 +350,11 @@ async function main() {
   const { error: refreshError } = await supabase.rpc(
     "refresh_player_career_stats",
   );
-  if (refreshError) throw refreshError;
+  if (refreshError) {
+    console.log(
+      `  RPC refresh failed (${refreshError.message}). Run migration 005 or execute: select refresh_player_career_stats();`,
+    );
+  }
 
   const undraftedWithStats = [...players.values()].filter(
     (p) => !everDraftedIds.has(p.externalId) && p.debutSeason !== null,
