@@ -18,8 +18,10 @@ create index if not exists players_is_undrafted_idx
 create index if not exists players_debut_season_idx
   on public.players (debut_season);
 
--- Recreate view to include new player fields
-create or replace view public.player_profiles as
+-- Must drop first: CREATE OR REPLACE cannot reorder/rename view columns
+drop view if exists public.player_profiles;
+
+create view public.player_profiles as
 select
   p.id as player_id,
   p.external_id,
