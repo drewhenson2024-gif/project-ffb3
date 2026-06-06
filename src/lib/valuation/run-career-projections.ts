@@ -11,13 +11,21 @@ import {
   isCurrentRookie,
   recentSeasonYears,
 } from "./career-complete";
-import { careerQuartile, estimateTotalSeasons } from "./career-stage";
 import {
   buildActiveProjectionCheckpoint,
   buildAllCheckpoints,
   buildPlayerCareers,
   type PlayerCareerInput,
+  type SeasonEntry,
 } from "./checkpoints";
+import {
+  calibrateRemainingPab,
+  buildDynastyLookup,
+  normalizePlayerName,
+} from "./dynasty-calibration";
+import { loadDynastyRankings } from "./load-dynasty-rankings";
+import { estimateActiveCareerTotal } from "./career-stage";
+import { computeRecentPerformance } from "./recent-performance";
 import { checkpointToCompCandidate } from "./projection-predict";
 import { predictCheckpointTuned } from "./projection-predict";
 import { trainProjectionModels } from "./projection-models";
@@ -56,11 +64,6 @@ export type CareerProjectionResult = {
   summary: CareerProjectionSummary;
 };
 
-type SeasonEntry = {
-  tier: import("./types").SeasonTier | null;
-  games: number;
-  position: Position;
-};
 
 function buildPositionMedianLengths(
   careers: PlayerCareerInput[],
@@ -97,7 +100,12 @@ function toSeasonPabMap(
       new Map(
         [...seasons.entries()].map(([year, entry]) => [
           year,
-          { tier: entry.tier, games: entry.games, position: entry.position },
+          {
+            tier: entry.tier,
+            games: entry.games,
+            position: entry.position,
+            pab: entry.pab,
+          },
         ]),
       ),
     ]),
@@ -205,9 +213,20 @@ export async function runCareerProjections(
   const compPool = trainingCheckpoints.map(checkpointToCompCandidate);
   const positionMedians = buildPositionMedianLengths(trainingCareers);
 
+  const dynastyFile = await loadDynastyRankings();
+  const dynastyByName = dynastyFile ? buildDynastyLookup(dynastyFile) : new Map();
+
   const projections = new Map<number, PlayerProjection>();
+  const modelRemainingByPosition = new Map<Position, number[]>();
   let activeProjected = 0;
   let skippedRookies = 0;
+
+  const pending: Array<{
+    career: PlayerCareerInput;
+    checkpoint: NonNullable<ReturnType<typeof buildActiveProjectionCheckpoint>>;
+    result: ReturnType<typeof predictCheckpointTuned>;
+    rates: import("./career-pab").TierPabRates;
+  }> = [];
 
   for (const career of careerInputs) {
     if (completeIds.has(career.playerId)) continue;
@@ -227,20 +246,88 @@ export async function runCareerProjections(
       continue;
     }
 
-    const estimatedTotal = estimateTotalSeasons(
+    const sortedYears = [...career.seasons.keys()].sort((a, b) => a - b);
+    const tiersSoFar = realizedTierCounts(career);
+    const lastYear = sortedYears[sortedYears.length - 1];
+    const recent = computeRecentPerformance(sortedYears, career.seasons, tiersSoFar);
+    let peakTier = 0;
+    for (const entry of career.seasons.values()) {
+      peakTier = Math.max(
+        peakTier,
+        entry.tier === "elite"
+          ? 4
+          : entry.tier === "star"
+            ? 3
+            : entry.tier === "starter"
+              ? 2
+              : entry.tier === "bench"
+                ? 1
+                : 0,
+      );
+    }
+
+    const estimatedTotal = estimateActiveCareerTotal(
       positionMedians,
       career.position,
       seasonsPlayed,
+      {
+        peakTier,
+        recent,
+        ageProxy: career.draftYear ? lastYear - career.draftYear + 22 : null,
+        tiersSoFar,
+      },
     );
     const checkpoint = buildActiveProjectionCheckpoint(career, estimatedTotal);
     if (!checkpoint) continue;
 
     const rates = ratesByPosition.get(career.position)!;
     const result = predictCheckpointTuned(models, compPool, checkpoint, rates);
+    const modelRemaining = result.predictedPab;
+
+    const peers = modelRemainingByPosition.get(career.position) ?? [];
+    peers.push(modelRemaining);
+    modelRemainingByPosition.set(career.position, peers);
+
+    pending.push({ career, checkpoint, result, rates });
+    activeProjected += 1;
+  }
+
+  const { data: nameRows } = await supabase
+    .from("player_profiles")
+    .select("player_id, full_name")
+    .in(
+      "player_id",
+      pending.map((row) => row.career.playerId),
+    );
+  const nameById = new Map(
+    (nameRows ?? []).map((row) => [row.player_id, row.full_name as string]),
+  );
+
+  for (const row of pending) {
+    const { career, checkpoint, result, rates } = row;
+    const modelRemaining = result.predictedPab;
+    const peerRemaining = modelRemainingByPosition.get(career.position) ?? [];
+    const playerName = normalizePlayerName(
+      nameById.get(career.playerId) ?? "",
+    );
+    const dynastyEntry = dynastyByName.get(playerName);
+    const calibratedRemaining = calibrateRemainingPab(
+      modelRemaining,
+      dynastyEntry?.positionRank ?? null,
+      peerRemaining,
+    );
+    const scale =
+      modelRemaining > 0 ? calibratedRemaining / modelRemaining : 1;
+    const calibratedTiers = {
+      elite: result.predictedTiers.elite * scale,
+      star: result.predictedTiers.star * scale,
+      starter: result.predictedTiers.starter * scale,
+    };
+
     const value = buildCareerValue(
       career.position,
       realizedTierCounts(career),
-      result.predictedTiers,
+      calibratedTiers,
       rates,
     );
 
@@ -248,11 +335,10 @@ export async function runCareerProjections(
       ...value,
       playerId: career.playerId,
       yearsPlayed: checkpoint.yearsPlayed,
-      careerQuartile: careerQuartile(checkpoint.yearsPlayed, estimatedTotal),
+      careerQuartile: checkpoint.careerQuartile,
       compSampleSize: result.compSampleSize,
       compMatchType: result.compMatchType,
     });
-    activeProjected += 1;
   }
 
   return {

@@ -14,6 +14,13 @@ export const PROJECTION_FEATURE_NAMES = [
   "peak_tier",
   "games_played",
   "age_proxy",
+  "recent_elite",
+  "recent_star",
+  "recent_starter",
+  "recent_valuable_seasons",
+  "recent_pab_rate",
+  "last_season_tier",
+  "momentum",
 ] as const;
 
 export type QuartileModelKey = `${Position}-Q${CareerQuartile}`;
@@ -41,6 +48,13 @@ export function checkpointFeatures(checkpoint: ProjectionCheckpoint): number[] {
     checkpoint.peakTier,
     checkpoint.gamesPlayed,
     checkpoint.ageProxy ?? checkpoint.yearsPlayed + 22,
+    checkpoint.recentElite,
+    checkpoint.recentStar,
+    checkpoint.recentStarter,
+    checkpoint.recentValuableSeasons,
+    checkpoint.recentPabRate,
+    checkpoint.lastSeasonTier,
+    checkpoint.momentum,
   ];
 }
 

@@ -1,3 +1,7 @@
+import type { Position } from "@/types/database";
+import type { TierSeasonCounts } from "./career-pab";
+import type { RecentPerformance } from "./recent-performance";
+
 export type CareerQuartile = 1 | 2 | 3 | 4;
 
 export const CAREER_QUARTILE_LABELS: Record<CareerQuartile, string> = {
@@ -32,4 +36,59 @@ export function estimateTotalSeasons(
     return Math.max(yearsPlayed + 2, yearsPlayed);
   }
   return medianLength;
+}
+
+/** Typical retirement age for players still producing valuable seasons. */
+const POSITION_RETIRE_AGE: Record<Position, number> = {
+  QB: 38,
+  RB: 30,
+  WR: 34,
+  TE: 35,
+};
+
+export type ActiveCareerContext = {
+  peakTier: number;
+  recent: RecentPerformance;
+  ageProxy: number | null;
+  tiersSoFar: TierSeasonCounts;
+};
+
+/**
+ * Estimate total career length for active players using age, peak tier,
+ * and recent performance — not population median alone.
+ */
+export function estimateActiveCareerTotal(
+  positionMedians: Map<string, number>,
+  position: Position,
+  yearsPlayed: number,
+  context: ActiveCareerContext,
+): number {
+  const medianFloor = estimateTotalSeasons(positionMedians, position, yearsPlayed);
+  let ageBasedTotal = yearsPlayed + 2;
+
+  if (context.ageProxy) {
+    const eliteBonus =
+      context.peakTier >= 4 ? 3 : context.peakTier >= 3 ? 1 : 0;
+    const recentBonus =
+      context.recent.recentValuableSeasons >= 2
+        ? 2
+        : context.recent.recentValuableSeasons >= 1
+          ? 1
+          : 0;
+    const retireAge = POSITION_RETIRE_AGE[position] + eliteBonus + recentBonus;
+    const remainingByAge = Math.max(1, retireAge - context.ageProxy);
+    ageBasedTotal = yearsPlayed + remainingByAge;
+  }
+
+  const recentElitePath =
+    context.recent.recentElite >= 1 && context.peakTier >= 4
+      ? yearsPlayed + 8
+      : 0;
+
+  const productivePath =
+    context.recent.recentValuableSeasons >= 2
+      ? yearsPlayed + 5
+      : yearsPlayed + 2;
+
+  return Math.max(medianFloor, ageBasedTotal, recentElitePath, productivePath);
 }

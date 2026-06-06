@@ -1,0 +1,26 @@
+{
+  "source": "FantasyPros consensus (manual seed for calibration)",
+  "asOf": "2025-06",
+  "players": [
+    { "name": "Josh Allen", "position": "QB", "dynastyRank": 12, "positionRank": 1 },
+    { "name": "Lamar Jackson", "position": "QB", "dynastyRank": 18, "positionRank": 2 },
+    { "name": "Joe Burrow", "position": "QB", "dynastyRank": 24, "positionRank": 3 },
+    { "name": "Jalen Hurts", "position": "QB", "dynastyRank": 28, "positionRank": 4 },
+    { "name": "Patrick Mahomes", "position": "QB", "dynastyRank": 35, "positionRank": 5 },
+    { "name": "Justin Herbert", "position": "QB", "dynastyRank": 48, "positionRank": 6 },
+    { "name": "Brock Purdy", "position": "QB", "dynastyRank": 55, "positionRank": 7 },
+    { "name": "C.J. Stroud", "position": "QB", "dynastyRank": 60, "positionRank": 8 },
+    { "name": "Ja'Marr Chase", "position": "WR", "dynastyRank": 1, "positionRank": 1 },
+    { "name": "Justin Jefferson", "position": "WR", "dynastyRank": 3, "positionRank": 2 },
+    { "name": "CeeDee Lamb", "position": "WR", "dynastyRank": 8, "positionRank": 3 },
+    { "name": "Amon-Ra St. Brown", "position": "WR", "dynastyRank": 15, "positionRank": 4 },
+    { "name": "Nico Collins", "position": "WR", "dynastyRank": 22, "positionRank": 5 },
+    { "name": "Bijan Robinson", "position": "RB", "dynastyRank": 5, "positionRank": 1 },
+    { "name": "Jahmyr Gibbs", "position": "RB", "dynastyRank": 10, "positionRank": 2 },
+    { "name": "Christian McCaffrey", "position": "RB", "dynastyRank": 20, "positionRank": 3 },
+    { "name": "Bucky Irving", "position": "RB", "dynastyRank": 32, "positionRank": 4 },
+    { "name": "Travis Kelce", "position": "TE", "dynastyRank": 40, "positionRank": 1 },
+    { "name": "Trey McBride", "position": "TE", "dynastyRank": 45, "positionRank": 2 },
+    { "name": "George Kittle", "position": "TE", "dynastyRank": 52, "positionRank": 3 }
+  ]
+}

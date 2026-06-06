@@ -5,6 +5,7 @@ import {
   type TierSeasonCounts,
 } from "./career-pab";
 import { careerQuartile, type CareerQuartile } from "./career-stage";
+import { computeRecentPerformance } from "./recent-performance";
 import type { SeasonTier } from "./types";
 
 export type TierCountsSoFar = TierSeasonCounts & { bench: number };
@@ -24,12 +25,20 @@ export type ProjectionCheckpoint = {
   peakTier: number;
   gamesPlayed: number;
   ageProxy: number | null;
+  recentElite: number;
+  recentStar: number;
+  recentStarter: number;
+  recentValuableSeasons: number;
+  recentPabRate: number;
+  lastSeasonTier: number;
+  momentum: number;
 };
 
-type SeasonEntry = {
+export type SeasonEntry = {
   tier: SeasonTier | null;
   games: number;
   position: Position;
+  pab: number;
 };
 
 function tierOrdinal(tier: SeasonTier | null): number {
@@ -116,6 +125,12 @@ export function buildCheckpointsForCareer(career: PlayerCareerInput): Projection
       starter: totalTiers.starter - tiersSoFar.starter,
     };
 
+    const recent = computeRecentPerformance(
+      sortedYears.slice(0, yearsPlayed),
+      career.seasons,
+      tiersSoFar,
+    );
+
     checkpoints.push({
       playerId: career.playerId,
       position: career.position,
@@ -131,6 +146,7 @@ export function buildCheckpointsForCareer(career: PlayerCareerInput): Projection
       peakTier,
       gamesPlayed: games,
       ageProxy: career.draftYear ? year - career.draftYear + 22 : null,
+      ...recent,
     });
   }
 
@@ -172,6 +188,11 @@ export function buildActiveProjectionCheckpoint(
 
   const yearsPlayed = sortedYears.length;
   const lastYear = sortedYears[sortedYears.length - 1];
+  const recent = computeRecentPerformance(
+    sortedYears,
+    career.seasons,
+    tiersSoFar,
+  );
 
   return {
     playerId: career.playerId,
@@ -188,6 +209,7 @@ export function buildActiveProjectionCheckpoint(
     peakTier,
     gamesPlayed: games,
     ageProxy: career.draftYear ? lastYear - career.draftYear + 22 : null,
+    ...recent,
   };
 }
 

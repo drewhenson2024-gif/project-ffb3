@@ -172,7 +172,12 @@ async function main() {
         new Map(
           [...map.entries()].map(([year, entry]) => [
             year,
-            { tier: entry.tier, games: entry.games, position: entry.position },
+            {
+              tier: entry.tier,
+              games: entry.games,
+              position: entry.position,
+              pab: entry.pab,
+            },
           ]),
         ),
       ]),
