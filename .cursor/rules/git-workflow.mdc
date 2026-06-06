@@ -1,45 +1,64 @@
 ---
-description: Git branch and commit workflow for project-ffb3 — commit and push every change on feature branches
+description: Git branch and commit workflow for project-ffb3 — every change committed and pushed to the active feature branch
 alwaysApply: true
 ---
 
 # Git workflow (project-ffb3)
 
-Applies to all future work on this project. Do not retroactively reorganize past work.
+Applies to **all** work on this project. GitHub must always reflect what was built — not just at the end of a session, but after every logical change.
+
+## Default behavior (do not wait to be asked)
+
+When implementing a feature, fix, or model change:
+
+1. **Switch or create the feature branch first** — before writing code.
+2. **Do the work.**
+3. **Commit the entire logical change** — one focused commit per slice; the full diff for that slice must land on GitHub.
+4. **Push immediately** after each commit (`git push origin <branch>`).
+5. **Tell the user** which branch and commit hash reflect the change.
+
+Do not end a task with uncommitted files. Do not describe completed work that is not on GitHub.
+
+If a change spans multiple files (lib + scripts + UI + data), they belong together on the same branch in one or a few sequential commits — not left local.
 
 ## Commits and GitHub
 
-After each logical change (feature slice, fix, or wiring step):
-
-1. Commit on the current feature branch with a clear message focused on **why**.
-2. Push to GitHub (`git push -u origin <branch>` on first push for that branch).
-3. Do not leave completed work only in the working tree — if code was written or changed, commit and push it before moving on.
-
-Ask before force-push, amend after push, or other destructive git operations.
+- Commit message: 1–2 sentences focused on **why**, not a file list.
+- Push after every commit on feature branches.
+- Ask before: force-push, amend after push, destructive git ops, merging to `main`.
+- Never commit secrets (`.env`, credentials).
 
 ## Feature branches
 
-Use one branch per major project area. Create or switch to the appropriate branch before starting work in that area.
+One branch per major project area. Use the branch that matches the work **before** starting.
 
-| Area | Branch (example) |
-|------|------------------|
+| Area | Branch |
+|------|--------|
 | PAB / tier valuation | `pab-valuation` |
-| Career projection | `career-projection` |
+| Player progression / career projection | `career-projection` |
 | Draft pick value | `draft-value` |
 | Data import / schema | `data-pipeline` |
 | UI / players pages | `player-ui` |
 
-Branch names: lowercase kebab-case, scoped to the feature. If work spans areas, pick the primary branch or split into focused PRs per branch.
+`career-projection` is the player progression branch (projection engine, backtest, dynasty calibration, `/valuation` wiring).
+
+Branch names: lowercase kebab-case. Unrelated areas → separate branches and separate commits.
 
 ## Workflow per task
 
-1. Confirm or create the feature branch for the section being worked on.
-2. Implement the change.
-3. Commit + push.
-4. Open or update a PR when a section milestone is ready (use `gh pr create` when asked).
+```
+checkout/create branch → implement → commit → push → (optional PR when milestone ready)
+```
+
+Example: improving projection with recent performance → all of `recent-performance.ts`, `career-stage.ts`, `dynasty-calibration.ts`, scripts, and `data/dynasty-rankings.json` committed and pushed to `career-projection` before moving on.
+
+## PRs
+
+Open or update a PR when a section milestone is ready and the user asks, or when a branch is ready to merge to `main`.
 
 ## What not to do
 
-- Do not batch many unrelated sections into one branch.
-- Do not retroactively create branches or commits for work already done before this rule.
-- Do not commit secrets (`.env`, credentials).
+- Do not leave completed work only in the working tree or only described in chat.
+- Do not batch unrelated project areas into one branch.
+- Do not retroactively reorganize commits for work done before this rule.
+- Do not commit to `main` for feature work — use the feature branch.
