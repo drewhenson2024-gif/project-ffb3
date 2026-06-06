@@ -1,0 +1,45 @@
+---
+description: Git branch and commit workflow for project-ffb3 — commit and push every change on feature branches
+alwaysApply: true
+---
+
+# Git workflow (project-ffb3)
+
+Applies to all future work on this project. Do not retroactively reorganize past work.
+
+## Commits and GitHub
+
+After each logical change (feature slice, fix, or wiring step):
+
+1. Commit on the current feature branch with a clear message focused on **why**.
+2. Push to GitHub (`git push -u origin <branch>` on first push for that branch).
+3. Do not leave completed work only in the working tree — if code was written or changed, commit and push it before moving on.
+
+Ask before force-push, amend after push, or other destructive git operations.
+
+## Feature branches
+
+Use one branch per major project area. Create or switch to the appropriate branch before starting work in that area.
+
+| Area | Branch (example) |
+|------|------------------|
+| PAB / tier valuation | `pab-valuation` |
+| Career projection | `career-projection` |
+| Draft pick value | `draft-value` |
+| Data import / schema | `data-pipeline` |
+| UI / players pages | `player-ui` |
+
+Branch names: lowercase kebab-case, scoped to the feature. If work spans areas, pick the primary branch or split into focused PRs per branch.
+
+## Workflow per task
+
+1. Confirm or create the feature branch for the section being worked on.
+2. Implement the change.
+3. Commit + push.
+4. Open or update a PR when a section milestone is ready (use `gh pr create` when asked).
+
+## What not to do
+
+- Do not batch many unrelated sections into one branch.
+- Do not retroactively create branches or commits for work already done before this rule.
+- Do not commit secrets (`.env`, credentials).
