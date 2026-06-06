@@ -46,12 +46,20 @@ export default async function Home() {
               <StatCard label="Career profiles" value={careerCount ?? 0} />
               <StatCard label="Data range" value="2000+" />
             </div>
-            <Link
-              href="/players"
-              className="inline-flex w-fit items-center rounded-full bg-emerald-500 px-6 py-3 text-sm font-semibold text-black transition-colors hover:bg-emerald-400"
-            >
-              Browse player rankings →
-            </Link>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/players"
+                className="inline-flex w-fit items-center rounded-full bg-emerald-500 px-6 py-3 text-sm font-semibold text-black transition-colors hover:bg-emerald-400"
+              >
+                Browse player rankings →
+              </Link>
+              <Link
+                href="/valuation"
+                className="inline-flex w-fit items-center rounded-full border border-emerald-500/40 px-6 py-3 text-sm font-semibold text-emerald-300 transition-colors hover:border-emerald-400 hover:text-emerald-200"
+              >
+                Player valuation →
+              </Link>
+            </div>
           </>
         ) : (
           <SetupNotice message="Schema is ready. Import raw draft and fantasy season data, then run select refresh_player_career_stats(); in the SQL Editor to build career totals." />
