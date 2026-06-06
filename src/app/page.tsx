@@ -1,5 +1,6 @@
 import { SetupNotice } from "@/components/setup-notice";
 import { createServerClient } from "@/lib/supabase/server";
+import Link from "next/link";
 
 export default async function Home() {
   const supabase = createServerClient();
@@ -39,11 +40,19 @@ export default async function Home() {
         ) : error ? (
           <SetupNotice message={`Could not reach the database: ${error.message}`} />
         ) : isReady ? (
-          <div className="grid gap-4 sm:grid-cols-3">
-            <StatCard label="Players" value={playerCount ?? 0} />
-            <StatCard label="Career profiles" value={careerCount ?? 0} />
-            <StatCard label="Data range" value="2000+" />
-          </div>
+          <>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <StatCard label="Players" value={playerCount ?? 0} />
+              <StatCard label="Career profiles" value={careerCount ?? 0} />
+              <StatCard label="Data range" value="2000+" />
+            </div>
+            <Link
+              href="/players"
+              className="inline-flex w-fit items-center rounded-full bg-emerald-500 px-6 py-3 text-sm font-semibold text-black transition-colors hover:bg-emerald-400"
+            >
+              Browse player rankings →
+            </Link>
+          </>
         ) : (
           <SetupNotice message="Schema is ready. Import raw draft and fantasy season data, then run select refresh_player_career_stats(); in the SQL Editor to build career totals." />
         )}
