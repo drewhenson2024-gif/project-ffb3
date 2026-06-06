@@ -1,3 +1,4 @@
+-- DEPRECATED: Prototype standings table. Use 002_player_fantasy_schema.sql instead.
 -- Fantasy Football starter schema
 create table if not exists public.teams (
   id bigint primary key generated always as identity,
