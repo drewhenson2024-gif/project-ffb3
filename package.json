@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "import:data": "tsx scripts/import-nflverse.ts"
+    "import:data": "tsx scripts/import-nflverse.ts",
+    "check:data": "tsx scripts/check-data-integrity.ts",
+    "analyze:projection": "tsx scripts/analyze-career-projection.ts",
+    "backtest:projection": "tsx scripts/backtest-projection.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.107.0",

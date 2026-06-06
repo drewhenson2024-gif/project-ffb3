@@ -47,12 +47,24 @@ function toAverages(
   return { averages, sampleCounts };
 }
 
+const MIN_VALUATION_SEASON = 2000;
+
 export function getValuationSeasonYears(
-  availableYears: number[],
+  maxSeasonYear: number,
   count = VALUATION_HISTORY_YEARS,
+  minSeasonYear = MIN_VALUATION_SEASON,
 ): number[] {
-  const sorted = [...availableYears].sort((a, b) => b - a);
-  return sorted.slice(0, count);
+  const years: number[] = [];
+
+  for (
+    let year = maxSeasonYear;
+    years.length < count && year >= minSeasonYear;
+    year -= 1
+  ) {
+    years.push(year);
+  }
+
+  return years;
 }
 
 export function computePositionPab(
@@ -84,7 +96,12 @@ export function computePositionPab(
 
   const pab = {} as Record<SeasonTier, number>;
   for (const tier of TIERS) {
-    pab[tier] = averages[tier] - benchAvg;
+    if (tier === "bench") {
+      pab.bench = 0;
+    } else {
+      // Per-season value above replacement; never negative for valuable tiers.
+      pab[tier] = Math.max(0, averages[tier] - benchAvg);
+    }
   }
 
   return { position, thresholds, averages, pab, sampleCounts };
@@ -93,12 +110,8 @@ export function computePositionPab(
 export function computeValuation(
   config: LeagueConfig,
   seasons: SeasonRow[],
+  years: number[],
 ): { years: number[]; positions: PositionPab[] } {
-  const availableYears = [
-    ...new Set(seasons.map((s) => s.season_year)),
-  ];
-  const years = getValuationSeasonYears(availableYears);
-
   const positions = POSITIONS.map((position) =>
     computePositionPab(config, position, seasons, years),
   );
